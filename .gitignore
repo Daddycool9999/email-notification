@@ -1,0 +1,6 @@
+email-service/dist
+user-service/dist
+email-service/node_modules
+user-service/node_modules
+email-service/.env
+user-service/.env  

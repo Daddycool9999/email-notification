@@ -1,0 +1,72 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"     # AMQP protocol
+      - "15672:15672"   # Web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+  
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+      interval: 10s
+      retries: 5
+      start_period: 15s
+      timeout: 5s
+
+  user-service:
+    build:
+      context: ./user-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+    ports:
+      - "3000:3000" 
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 3000
+
+  email-service:
+    build:
+      context: ./email-service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+        restart: true
+      db:
+        condition: service_started
+        restart: true
+    ports:
+      - "8080:8080" 
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      PORT: 8080
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+      EMAIL_USER: 'your-email@gmail.com'
+      EMAIL_PASSWORD: 'your-app-specific-password'
+    restart: "no"
+
+
+volumes:
+  pgdata:
