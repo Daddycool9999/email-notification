@@ -68,7 +68,7 @@ The main flow works as follows:
     ```bash
     RABBITMQ_URL=amqp://localhost:5672
     PORT=8080
-    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+    DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres (default)
     EMAIL_USER=your-email@gmail.com
     EMAIL_PASSWORD=your-app-specific-password
     ```
@@ -96,12 +96,30 @@ The main flow works as follows:
 
 2. Edit docker-compose.yml to set your production environment variables (used when NODE_ENV=production):
     ```yaml
+    rabbitmq:
+      environment:
+        RABBITMQ_DEFAULT_USER: your-rabbitmq-user
+        RABBITMQ_DEFAULT_PASS: your-rabbitmq-password
+
+    db:
+      environment:
+        POSTGRES_USER: your-postgres-user
+        POSTGRES_PASSWORD: your-postgres-password
+        POSTGRES_DB: your-database-name
+
     email-service:
       environment:
         NODE_ENV: production  # Services will use these env vars instead of .env
         EMAIL_USER: your-production-email@domain.com
         EMAIL_PASSWORD: your-production-email-password
+        DATABASE_URL
+        RABBITMQ_URL
         # Other variables are pre-configured for container networking
+
+    user-service:
+      environment:
+        NODE_ENV: production
+        RABBITMQ_URL
     ```
 
 3. Start the services:
